@@ -13,19 +13,43 @@ def get_database_url():
     except:
         pass
     
-    db_url = os.environ.get('DATABASE_URL')
-    if not db_url:
-        raise ValueError(
-            "Database URL not found. Please configure either:\n"
-            "1. Streamlit Cloud: Add database URL in Secrets settings\n"
-            "2. Replit/Local: Set DATABASE_URL environment variable"
-        )
-    return db_url
+    return os.environ.get('DATABASE_URL')
 
-DATABASE_URL = get_database_url()
+# Lazy initialization - only create engine when first accessed
+_engine = None
+_SessionLocal = None
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def get_engine():
+    """Get or create database engine"""
+    global _engine
+    if _engine is None:
+        db_url = get_database_url()
+        if not db_url:
+            raise ValueError(
+                "Database URL not found. Please configure either:\n"
+                "1. Streamlit Cloud: Add database URL in Secrets settings\n"
+                "2. Replit/Local: Set DATABASE_URL environment variable"
+            )
+        _engine = create_engine(db_url)
+    return _engine
+
+def get_session_local():
+    """Get or create SessionLocal factory"""
+    global _SessionLocal
+    if _SessionLocal is None:
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+    return _SessionLocal
+
+# Initialize database connection (will only happen when first accessed)
+# Note: get_engine() and get_session_local() will raise ValueError if database is not configured
+try:
+    engine = get_engine()
+    SessionLocal = get_session_local()
+except ValueError:
+    # Database not configured - will be handled by the app
+    engine = None
+    SessionLocal = None
+
 Base = declarative_base()
 
 class Animal(Base):
@@ -217,9 +241,13 @@ class FinancialTransaction(Base):
     notes = Column(Text)
 
 def init_db():
+    if engine is None:
+        raise ValueError("Database not configured. Please set DATABASE_URL or configure Streamlit secrets.")
     Base.metadata.create_all(bind=engine)
 
 def get_db():
+    if SessionLocal is None:
+        raise ValueError("Database not configured. Please set DATABASE_URL or configure Streamlit secrets.")
     db = SessionLocal()
     try:
         yield db

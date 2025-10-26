@@ -4,8 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import io
-from database import SessionLocal
-import db_utils
 
 st.set_page_config(
     page_title="Gir Cow Dairy Farm Management",
@@ -13,6 +11,49 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Try to import database modules and handle configuration errors
+try:
+    from database import SessionLocal
+    import db_utils
+    DATABASE_AVAILABLE = True
+except ValueError as e:
+    DATABASE_AVAILABLE = False
+    DATABASE_ERROR = str(e)
+
+# Check if database is configured
+if not DATABASE_AVAILABLE:
+    st.error("⚠️ **Database Not Configured**")
+    st.markdown(f"""
+    The application cannot connect to the database. Please configure your database connection:
+    
+    ### For Streamlit Cloud:
+    1. Click the **⋮** menu (three dots) in the top right corner
+    2. Select **Settings** → **Secrets**
+    3. Add the following configuration:
+    
+    ```toml
+    [connections.postgresql]
+    url = "your-database-connection-string"
+    ```
+    
+    ### For Local Development:
+    Set the `DATABASE_URL` environment variable to your PostgreSQL connection string.
+    
+    ---
+    
+    **Error Details:**
+    ```
+    {DATABASE_ERROR}
+    ```
+    
+    ### Need a Free PostgreSQL Database?
+    - **Neon**: https://neon.tech/ (recommended, no credit card required)
+    - **Supabase**: https://supabase.com/
+    
+    After configuring the database, the app will automatically restart.
+    """)
+    st.stop()
 
 # Inject custom CSS only once to avoid duplication on reruns
 if 'custom_css_loaded' not in st.session_state:
@@ -79,8 +120,23 @@ if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
 
 if not st.session_state.data_loaded:
-    load_data_from_db()
-    st.session_state.data_loaded = True
+    try:
+        load_data_from_db()
+        st.session_state.data_loaded = True
+    except (ValueError, TypeError) as e:
+        st.error("⚠️ **Database Connection Error**")
+        st.markdown(f"""
+        Cannot load data from the database. This usually means the database is not properly configured.
+        
+        **Error:** `{str(e)}`
+        
+        ### For Streamlit Cloud:
+        Please configure your database connection in **Settings → Secrets**.
+        
+        ### For Local Development:
+        Make sure the `DATABASE_URL` environment variable is set.
+        """)
+        st.stop()
 
 st.sidebar.title("🐄 Gir Cow Farm")
 st.sidebar.markdown("---")
