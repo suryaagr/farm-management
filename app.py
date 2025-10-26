@@ -20,34 +20,34 @@ if 'custom_css_loaded' not in st.session_state:
     st.markdown("""
 <style>
     /* Simple navigation - clickable label style */
-    .stRadio > div > label > div {
+    /* Remove all styling from navigation container */
+    [data-testid="stSidebar"] .stRadio > div > label > div {
         background-color: transparent !important;
-        padding: 0.5rem 0 !important;
+        padding: 0.3rem 0 !important;
         border: none !important;
         border-radius: 0 !important;
-        transition: none !important;
-        cursor: pointer !important;
         box-shadow: none !important;
     }
     
-    .stRadio > div > label > div:hover {
+    [data-testid="stSidebar"] .stRadio > div > label > div:hover {
         background-color: transparent !important;
-        border: none !important;
     }
     
-    .stRadio > div > label[data-checked="true"] > div {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    .stRadio > div > label {
-        font-weight: normal !important;
-    }
-    
-    .stRadio > div > label[data-checked="true"] {
-        font-weight: 600 !important;
+    /* Style for selected navigation item using aria-checked attribute */
+    [data-testid="stSidebar"] .stRadio label[aria-checked="true"],
+    [data-testid="stSidebar"] .stRadio label[aria-checked="true"] *,
+    [data-testid="stSidebar"] .stRadio div[role="radio"][aria-checked="true"],
+    [data-testid="stSidebar"] .stRadio div[role="radio"][aria-checked="true"] * {
         color: #10b981 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Style for unselected navigation items */
+    [data-testid="stSidebar"] .stRadio label[aria-checked="false"],
+    [data-testid="stSidebar"] .stRadio label[aria-checked="false"] *,
+    [data-testid="stSidebar"] .stRadio div[role="radio"][aria-checked="false"],
+    [data-testid="stSidebar"] .stRadio div[role="radio"][aria-checked="false"] * {
+        font-weight: 400 !important;
     }
 </style>
 """, unsafe_allow_html=True)
