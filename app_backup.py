@@ -4,8 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import io
-from database import SessionLocal
-import db_utils
 
 st.set_page_config(
     page_title="Gir Cow Dairy Farm Management",
@@ -14,35 +12,83 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-@st.cache_resource
-def get_database():
-    return SessionLocal()
+def initialize_session_state():
+    if 'animals' not in st.session_state:
+        st.session_state.animals = pd.DataFrame(columns=[
+            'animal_id', 'name', 'ear_tag', 'dob', 'sex', 'breed', 'lifecycle_stage',
+            'sire', 'dam', 'registration_date', 'status', 'notes'
+        ])
+    
+    if 'milk_records' not in st.session_state:
+        st.session_state.milk_records = pd.DataFrame(columns=[
+            'date', 'animal_id', 'session', 'yield_litres', 'usage', 'price_per_litre', 'notes'
+        ])
+    
+    if 'breeding_records' not in st.session_state:
+        st.session_state.breeding_records = pd.DataFrame(columns=[
+            'animal_id', 'heat_date', 'insemination_date', 'insemination_type', 
+            'bull_id', 'pregnancy_confirmed', 'expected_calving', 'actual_calving',
+            'calf_id', 'calf_sex', 'notes'
+        ])
+    
+    if 'health_records' not in st.session_state:
+        st.session_state.health_records = pd.DataFrame(columns=[
+            'date', 'animal_id', 'record_type', 'description', 'medicine', 
+            'dosage', 'cost', 'veterinarian', 'next_due', 'notes'
+        ])
+    
+    if 'medicine_inventory' not in st.session_state:
+        st.session_state.medicine_inventory = pd.DataFrame(columns=[
+            'medicine_name', 'category', 'quantity', 'unit', 'expiry_date',
+            'cost_per_unit', 'supplier', 'reorder_level', 'notes'
+        ])
+    
+    if 'fodder_cultivation' not in st.session_state:
+        st.session_state.fodder_cultivation = pd.DataFrame(columns=[
+            'crop_type', 'plot_id', 'area_acres', 'sowing_date', 'harvest_date',
+            'yield_kg', 'cost', 'status', 'notes'
+        ])
+    
+    if 'feed_inventory' not in st.session_state:
+        st.session_state.feed_inventory = pd.DataFrame(columns=[
+            'feed_name', 'category', 'quantity_kg', 'purchase_date', 
+            'cost_per_kg', 'supplier', 'notes'
+        ])
+    
+    if 'feed_consumption' not in st.session_state:
+        st.session_state.feed_consumption = pd.DataFrame(columns=[
+            'date', 'feed_name', 'quantity_kg', 'herd_size', 'notes'
+        ])
+    
+    if 'labour_records' not in st.session_state:
+        st.session_state.labour_records = pd.DataFrame(columns=[
+            'worker_id', 'name', 'category', 'phone', 'daily_wage', 'status'
+        ])
+    
+    if 'attendance' not in st.session_state:
+        st.session_state.attendance = pd.DataFrame(columns=[
+            'date', 'worker_id', 'present', 'tasks', 'hours', 'notes'
+        ])
+    
+    if 'equipment' not in st.session_state:
+        st.session_state.equipment = pd.DataFrame(columns=[
+            'equipment_id', 'name', 'type', 'purchase_date', 'purchase_cost',
+            'status', 'notes'
+        ])
+    
+    if 'equipment_maintenance' not in st.session_state:
+        st.session_state.equipment_maintenance = pd.DataFrame(columns=[
+            'date', 'equipment_id', 'maintenance_type', 'cost', 'fuel_litres',
+            'hours_used', 'notes'
+        ])
+    
+    if 'financial_transactions' not in st.session_state:
+        st.session_state.financial_transactions = pd.DataFrame(columns=[
+            'date', 'type', 'category', 'subcategory', 'amount', 
+            'description', 'reference_id', 'notes'
+        ])
 
-def load_data_from_db():
-    db = get_database()
-    try:
-        st.session_state.animals = db_utils.get_all_animals(db)
-        st.session_state.milk_records = db_utils.get_all_milk_records(db)
-        st.session_state.breeding_records = db_utils.get_all_breeding_records(db)
-        st.session_state.health_records = db_utils.get_all_health_records(db)
-        st.session_state.medicine_inventory = db_utils.get_all_medicine_inventory(db)
-        st.session_state.fodder_cultivation = db_utils.get_all_fodder_cultivation(db)
-        st.session_state.feed_inventory = db_utils.get_all_feed_inventory(db)
-        st.session_state.feed_consumption = db_utils.get_all_feed_consumption(db)
-        st.session_state.labour_records = db_utils.get_all_workers(db)
-        st.session_state.attendance = db_utils.get_all_attendance(db)
-        st.session_state.equipment = db_utils.get_all_equipment(db)
-        st.session_state.equipment_maintenance = db_utils.get_all_equipment_maintenance(db)
-        st.session_state.financial_transactions = db_utils.get_all_financial_transactions(db)
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-
-if 'data_loaded' not in st.session_state:
-    st.session_state.data_loaded = False
-
-if not st.session_state.data_loaded:
-    load_data_from_db()
-    st.session_state.data_loaded = True
+initialize_session_state()
 
 st.sidebar.title("🐄 Gir Cow Dairy Farm")
 st.sidebar.markdown("---")
@@ -99,28 +145,23 @@ def animal_management():
         
         if st.button("Register Animal", type="primary"):
             if animal_id and dob and sex and lifecycle_stage:
-                db = get_database()
-                try:
-                    animal_data = {
-                        'animal_id': animal_id,
-                        'name': name,
-                        'ear_tag': ear_tag,
-                        'dob': dob,
-                        'sex': sex,
-                        'breed': breed,
-                        'lifecycle_stage': lifecycle_stage,
-                        'sire': sire,
-                        'dam': dam,
-                        'registration_date': datetime.now().date(),
-                        'status': status,
-                        'notes': notes
-                    }
-                    db_utils.add_animal(db, animal_data)
-                    st.success(f"Animal {animal_id} registered successfully!")
-                    load_data_from_db()
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error registering animal: {str(e)}")
+                new_animal = pd.DataFrame([{
+                    'animal_id': animal_id,
+                    'name': name,
+                    'ear_tag': ear_tag,
+                    'dob': dob,
+                    'sex': sex,
+                    'breed': breed,
+                    'lifecycle_stage': lifecycle_stage,
+                    'sire': sire,
+                    'dam': dam,
+                    'registration_date': datetime.now().date(),
+                    'status': status,
+                    'notes': notes
+                }])
+                st.session_state.animals = pd.concat([st.session_state.animals, new_animal], ignore_index=True)
+                st.success(f"Animal {animal_id} registered successfully!")
+                st.rerun()
             else:
                 st.error("Please fill all required fields (*)")
     
@@ -269,27 +310,22 @@ def breeding_genetics():
             
             if st.button("Record Breeding Event", type="primary"):
                 if animal_id and heat_date and insemination_date and bull_id:
-                    db = get_database()
-                    try:
-                        breeding_data = {
-                            'animal_id': animal_id,
-                            'heat_date': heat_date,
-                            'insemination_date': insemination_date,
-                            'insemination_type': insemination_type,
-                            'bull_id': bull_id,
-                            'pregnancy_confirmed': pregnancy_confirmed,
-                            'expected_calving': expected_calving,
-                            'actual_calving': None,
-                            'calf_id': None,
-                            'calf_sex': None,
-                            'notes': notes
-                        }
-                        db_utils.add_breeding_record(db, breeding_data)
-                        st.success("Breeding event recorded successfully!")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error recording breeding: {str(e)}")
+                    new_breeding = pd.DataFrame([{
+                        'animal_id': animal_id,
+                        'heat_date': heat_date,
+                        'insemination_date': insemination_date,
+                        'insemination_type': insemination_type,
+                        'bull_id': bull_id,
+                        'pregnancy_confirmed': pregnancy_confirmed,
+                        'expected_calving': expected_calving,
+                        'actual_calving': None,
+                        'calf_id': None,
+                        'calf_sex': None,
+                        'notes': notes
+                    }])
+                    st.session_state.breeding_records = pd.concat([st.session_state.breeding_records, new_breeding], ignore_index=True)
+                    st.success("Breeding event recorded successfully!")
+                    st.rerun()
                 else:
                     st.error("Please fill all required fields (*)")
         else:
@@ -302,14 +338,15 @@ def breeding_genetics():
             st.dataframe(st.session_state.breeding_records, use_container_width=True)
             
             st.markdown("#### Update Calving Record")
-            db = get_database()
-            records_pending = db_utils.get_breeding_records_pending_calving(db)
+            records_pending = st.session_state.breeding_records[
+                st.session_state.breeding_records['actual_calving'].isna()
+            ]
             
             if not records_pending.empty:
-                record_id = st.selectbox(
+                record_idx = st.selectbox(
                     "Select Breeding Record to Update",
-                    records_pending['id'].tolist(),
-                    format_func=lambda x: f"{records_pending[records_pending['id']==x]['animal_id'].iloc[0]} - Expected: {records_pending[records_pending['id']==x]['expected_calving'].iloc[0]}"
+                    records_pending.index,
+                    format_func=lambda x: f"{records_pending.loc[x, 'animal_id']} - Expected: {records_pending.loc[x, 'expected_calving']}"
                 )
                 
                 col1, col2, col3 = st.columns(3)
@@ -321,18 +358,11 @@ def breeding_genetics():
                     calf_sex = st.selectbox("Calf Sex", ["Female", "Male"])
                 
                 if st.button("Update Calving Record"):
-                    try:
-                        update_data = {
-                            'actual_calving': actual_calving,
-                            'calf_id': calf_id,
-                            'calf_sex': calf_sex
-                        }
-                        db_utils.update_breeding_record(db, record_id, update_data)
-                        st.success("Calving record updated!")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error updating calving record: {str(e)}")
+                    st.session_state.breeding_records.at[record_idx, 'actual_calving'] = actual_calving
+                    st.session_state.breeding_records.at[record_idx, 'calf_id'] = calf_id
+                    st.session_state.breeding_records.at[record_idx, 'calf_sex'] = calf_sex
+                    st.success("Calving record updated!")
+                    st.rerun()
         else:
             st.info("No breeding records yet.")
     
@@ -408,38 +438,33 @@ def milk_collection_sales():
             
             if st.button("Record Milk Collection", type="primary"):
                 if animal_id and yield_litres > 0:
-                    db = get_database()
-                    try:
-                        milk_data = {
+                    new_record = pd.DataFrame([{
+                        'date': collection_date,
+                        'animal_id': animal_id,
+                        'session': session,
+                        'yield_litres': yield_litres,
+                        'usage': usage,
+                        'price_per_litre': price_per_litre,
+                        'notes': notes
+                    }])
+                    st.session_state.milk_records = pd.concat([st.session_state.milk_records, new_record], ignore_index=True)
+                    
+                    if usage == "Sold":
+                        revenue = yield_litres * price_per_litre
+                        new_transaction = pd.DataFrame([{
                             'date': collection_date,
-                            'animal_id': animal_id,
-                            'session': session,
-                            'yield_litres': yield_litres,
-                            'usage': usage,
-                            'price_per_litre': price_per_litre,
+                            'type': 'Income',
+                            'category': 'Milk Sales',
+                            'subcategory': animal_id,
+                            'amount': revenue,
+                            'description': f"Milk sale - {yield_litres}L @ ₹{price_per_litre}/L",
+                            'reference_id': animal_id,
                             'notes': notes
-                        }
-                        db_utils.add_milk_record(db, milk_data)
-                        
-                        if usage == "Sold":
-                            revenue = yield_litres * price_per_litre
-                            transaction_data = {
-                                'date': collection_date,
-                                'type': 'Income',
-                                'category': 'Milk Sales',
-                                'subcategory': animal_id,
-                                'amount': revenue,
-                                'description': f"Milk sale - {yield_litres}L @ ₹{price_per_litre}/L",
-                                'reference_id': animal_id,
-                                'notes': notes
-                            }
-                            db_utils.add_financial_transaction(db, transaction_data)
-                        
-                        st.success("Milk collection recorded successfully!")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error recording milk collection: {str(e)}")
+                        }])
+                        st.session_state.financial_transactions = pd.concat([st.session_state.financial_transactions, new_transaction], ignore_index=True)
+                    
+                    st.success("Milk collection recorded successfully!")
+                    st.rerun()
                 else:
                     st.error("Please fill all required fields (*)")
         else:
@@ -558,39 +583,34 @@ def fodder_feed():
             
             if st.button("Add Cultivation Record", type="primary"):
                 if crop_type and plot_id and area_acres > 0:
-                    db = get_database()
-                    try:
-                        cultivation_data = {
-                            'crop_type': crop_type,
-                            'plot_id': plot_id,
-                            'area_acres': area_acres,
-                            'sowing_date': sowing_date,
-                            'harvest_date': harvest_date,
-                            'yield_kg': 0,
-                            'cost': cost,
-                            'status': status,
+                    new_cultivation = pd.DataFrame([{
+                        'crop_type': crop_type,
+                        'plot_id': plot_id,
+                        'area_acres': area_acres,
+                        'sowing_date': sowing_date,
+                        'harvest_date': harvest_date,
+                        'yield_kg': 0,
+                        'cost': cost,
+                        'status': status,
+                        'notes': notes
+                    }])
+                    st.session_state.fodder_cultivation = pd.concat([st.session_state.fodder_cultivation, new_cultivation], ignore_index=True)
+                    
+                    if cost > 0:
+                        new_transaction = pd.DataFrame([{
+                            'date': sowing_date,
+                            'type': 'Expense',
+                            'category': 'Fodder Cultivation',
+                            'subcategory': crop_type,
+                            'amount': cost,
+                            'description': f"{crop_type} cultivation - {plot_id}",
+                            'reference_id': plot_id,
                             'notes': notes
-                        }
-                        db_utils.add_fodder_cultivation(db, cultivation_data)
-                        
-                        if cost > 0:
-                            transaction_data = {
-                                'date': sowing_date,
-                                'type': 'Expense',
-                                'category': 'Fodder Cultivation',
-                                'subcategory': crop_type,
-                                'amount': cost,
-                                'description': f"{crop_type} cultivation - {plot_id}",
-                                'reference_id': plot_id,
-                                'notes': notes
-                            }
-                            db_utils.add_financial_transaction(db, transaction_data)
-                        
-                        st.success("Cultivation record added!")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error adding cultivation record: {str(e)}")
+                        }])
+                        st.session_state.financial_transactions = pd.concat([st.session_state.financial_transactions, new_transaction], ignore_index=True)
+                    
+                    st.success("Cultivation record added!")
+                    st.rerun()
                 else:
                     st.error("Please fill all required fields (*)")
         
@@ -635,38 +655,33 @@ def fodder_feed():
             
             if st.button("Add Feed Purchase", type="primary"):
                 if feed_name and quantity_kg > 0 and cost_per_kg >= 0:
-                    db = get_database()
-                    try:
-                        total_cost = quantity_kg * cost_per_kg
-                        
-                        feed_data = {
-                            'feed_name': feed_name,
-                            'category': category,
-                            'quantity_kg': quantity_kg,
-                            'purchase_date': purchase_date,
-                            'cost_per_kg': cost_per_kg,
-                            'supplier': supplier,
-                            'notes': feed_notes
-                        }
-                        db_utils.add_feed_inventory(db, feed_data)
-                        
-                        transaction_data = {
-                            'date': purchase_date,
-                            'type': 'Expense',
-                            'category': 'Feed Purchase',
-                            'subcategory': category,
-                            'amount': total_cost,
-                            'description': f"{feed_name} - {quantity_kg}kg @ ₹{cost_per_kg}/kg",
-                            'reference_id': feed_name,
-                            'notes': feed_notes
-                        }
-                        db_utils.add_financial_transaction(db, transaction_data)
-                        
-                        st.success(f"Feed purchase recorded! Total: ₹{total_cost:.2f}")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error adding feed purchase: {str(e)}")
+                    total_cost = quantity_kg * cost_per_kg
+                    
+                    new_feed = pd.DataFrame([{
+                        'feed_name': feed_name,
+                        'category': category,
+                        'quantity_kg': quantity_kg,
+                        'purchase_date': purchase_date,
+                        'cost_per_kg': cost_per_kg,
+                        'supplier': supplier,
+                        'notes': feed_notes
+                    }])
+                    st.session_state.feed_inventory = pd.concat([st.session_state.feed_inventory, new_feed], ignore_index=True)
+                    
+                    new_transaction = pd.DataFrame([{
+                        'date': purchase_date,
+                        'type': 'Expense',
+                        'category': 'Feed Purchase',
+                        'subcategory': category,
+                        'amount': total_cost,
+                        'description': f"{feed_name} - {quantity_kg}kg @ ₹{cost_per_kg}/kg",
+                        'reference_id': feed_name,
+                        'notes': feed_notes
+                    }])
+                    st.session_state.financial_transactions = pd.concat([st.session_state.financial_transactions, new_transaction], ignore_index=True)
+                    
+                    st.success(f"Feed purchase recorded! Total: ₹{total_cost:.2f}")
+                    st.rerun()
                 else:
                     st.error("Please fill all required fields (*)")
         
@@ -838,40 +853,35 @@ def health_medicine():
                 
                 if st.button("Add Health Record", type="primary"):
                     if animal_id and description:
-                        db = get_database()
-                        try:
-                            health_data = {
+                        new_health = pd.DataFrame([{
+                            'date': record_date,
+                            'animal_id': animal_id,
+                            'record_type': record_type,
+                            'description': description,
+                            'medicine': medicine if medicine != "None" else None,
+                            'dosage': dosage,
+                            'cost': cost,
+                            'veterinarian': veterinarian,
+                            'next_due': next_due,
+                            'notes': health_notes
+                        }])
+                        st.session_state.health_records = pd.concat([st.session_state.health_records, new_health], ignore_index=True)
+                        
+                        if cost > 0:
+                            new_transaction = pd.DataFrame([{
                                 'date': record_date,
-                                'animal_id': animal_id,
-                                'record_type': record_type,
-                                'description': description,
-                                'medicine': medicine if medicine != "None" else None,
-                                'dosage': dosage,
-                                'cost': cost,
-                                'veterinarian': veterinarian,
-                                'next_due': next_due,
+                                'type': 'Expense',
+                                'category': 'Health & Medicine',
+                                'subcategory': record_type,
+                                'amount': cost,
+                                'description': f"{record_type} - {animal_id}",
+                                'reference_id': animal_id,
                                 'notes': health_notes
-                            }
-                            db_utils.add_health_record(db, health_data)
-                            
-                            if cost > 0:
-                                transaction_data = {
-                                    'date': record_date,
-                                    'type': 'Expense',
-                                    'category': 'Health & Medicine',
-                                    'subcategory': record_type,
-                                    'amount': cost,
-                                    'description': f"{record_type} - {animal_id}",
-                                    'reference_id': animal_id,
-                                    'notes': health_notes
-                                }
-                                db_utils.add_financial_transaction(db, transaction_data)
-                            
-                            st.success("Health record added!")
-                            load_data_from_db()
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error adding health record: {str(e)}")
+                            }])
+                            st.session_state.financial_transactions = pd.concat([st.session_state.financial_transactions, new_transaction], ignore_index=True)
+                        
+                        st.success("Health record added!")
+                        st.rerun()
                     else:
                         st.error("Please fill all required fields (*)")
             else:
