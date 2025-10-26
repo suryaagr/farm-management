@@ -14,12 +14,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-@st.cache_resource
-def get_database():
-    return SessionLocal()
 
 def load_data_from_db():
-    db = get_database()
+    db = SessionLocal()
     try:
         st.session_state.animals = db_utils.get_all_animals(db)
         st.session_state.milk_records = db_utils.get_all_milk_records(db)
@@ -36,6 +33,9 @@ def load_data_from_db():
         st.session_state.financial_transactions = db_utils.get_all_financial_transactions(db)
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
+        db.rollback()
+    finally:
+        db.close()
 
 if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
@@ -99,7 +99,7 @@ def animal_management():
         
         if st.button("Register Animal", type="primary"):
             if animal_id and dob and sex and lifecycle_stage:
-                db = get_database()
+                db = SessionLocal()
                 try:
                     animal_data = {
                         'animal_id': animal_id,
@@ -121,6 +121,9 @@ def animal_management():
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error registering animal: {str(e)}")
+                    db.rollback()
+                finally:
+                    db.close()
             else:
                 st.error("Please fill all required fields (*)")
     
@@ -269,7 +272,7 @@ def breeding_genetics():
             
             if st.button("Record Breeding Event", type="primary"):
                 if animal_id and heat_date and insemination_date and bull_id:
-                    db = get_database()
+                    db = SessionLocal()
                     try:
                         breeding_data = {
                             'animal_id': animal_id,
@@ -290,6 +293,9 @@ def breeding_genetics():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error recording breeding: {str(e)}")
+                        db.rollback()
+                    finally:
+                        db.close()
                 else:
                     st.error("Please fill all required fields (*)")
         else:
@@ -302,37 +308,44 @@ def breeding_genetics():
             st.dataframe(st.session_state.breeding_records, use_container_width=True)
             
             st.markdown("#### Update Calving Record")
-            db = get_database()
-            records_pending = db_utils.get_breeding_records_pending_calving(db)
-            
-            if not records_pending.empty:
-                record_id = st.selectbox(
-                    "Select Breeding Record to Update",
-                    records_pending['id'].tolist(),
-                    format_func=lambda x: f"{records_pending[records_pending['id']==x]['animal_id'].iloc[0]} - Expected: {records_pending[records_pending['id']==x]['expected_calving'].iloc[0]}"
-                )
+            db = SessionLocal()
+            try:
+                records_pending = db_utils.get_breeding_records_pending_calving(db)
                 
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    actual_calving = st.date_input("Actual Calving Date")
-                with col2:
-                    calf_id = st.text_input("Calf ID")
-                with col3:
-                    calf_sex = st.selectbox("Calf Sex", ["Female", "Male"])
-                
-                if st.button("Update Calving Record"):
-                    try:
-                        update_data = {
-                            'actual_calving': actual_calving,
-                            'calf_id': calf_id,
-                            'calf_sex': calf_sex
-                        }
-                        db_utils.update_breeding_record(db, record_id, update_data)
-                        st.success("Calving record updated!")
-                        load_data_from_db()
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error updating calving record: {str(e)}")
+                if not records_pending.empty:
+                    record_id = st.selectbox(
+                        "Select Breeding Record to Update",
+                        records_pending['id'].tolist(),
+                        format_func=lambda x: f"{records_pending[records_pending['id']==x]['animal_id'].iloc[0]} - Expected: {records_pending[records_pending['id']==x]['expected_calving'].iloc[0]}"
+                    )
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        actual_calving = st.date_input("Actual Calving Date")
+                    with col2:
+                        calf_id = st.text_input("Calf ID")
+                    with col3:
+                        calf_sex = st.selectbox("Calf Sex", ["Female", "Male"])
+                    
+                    if st.button("Update Calving Record"):
+                        try:
+                            update_data = {
+                                'actual_calving': actual_calving,
+                                'calf_id': calf_id,
+                                'calf_sex': calf_sex
+                            }
+                            db_utils.update_breeding_record(db, record_id, update_data)
+                            st.success("Calving record updated!")
+                            load_data_from_db()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error updating calving record: {str(e)}")
+                            db.rollback()
+            except Exception as e:
+                st.error(f"Error loading breeding records: {str(e)}")
+                db.rollback()
+            finally:
+                db.close()
         else:
             st.info("No breeding records yet.")
     
@@ -408,7 +421,7 @@ def milk_collection_sales():
             
             if st.button("Record Milk Collection", type="primary"):
                 if animal_id and yield_litres > 0:
-                    db = get_database()
+                    db = SessionLocal()
                     try:
                         milk_data = {
                             'date': collection_date,
@@ -440,6 +453,9 @@ def milk_collection_sales():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error recording milk collection: {str(e)}")
+                        db.rollback()
+                    finally:
+                        db.close()
                 else:
                     st.error("Please fill all required fields (*)")
         else:
@@ -558,7 +574,7 @@ def fodder_feed():
             
             if st.button("Add Cultivation Record", type="primary"):
                 if crop_type and plot_id and area_acres > 0:
-                    db = get_database()
+                    db = SessionLocal()
                     try:
                         cultivation_data = {
                             'crop_type': crop_type,
@@ -591,6 +607,9 @@ def fodder_feed():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error adding cultivation record: {str(e)}")
+                        db.rollback()
+                    finally:
+                        db.close()
                 else:
                     st.error("Please fill all required fields (*)")
         
@@ -635,7 +654,7 @@ def fodder_feed():
             
             if st.button("Add Feed Purchase", type="primary"):
                 if feed_name and quantity_kg > 0 and cost_per_kg >= 0:
-                    db = get_database()
+                    db = SessionLocal()
                     try:
                         total_cost = quantity_kg * cost_per_kg
                         
@@ -667,6 +686,9 @@ def fodder_feed():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Error adding feed purchase: {str(e)}")
+                        db.rollback()
+                    finally:
+                        db.close()
                 else:
                     st.error("Please fill all required fields (*)")
         
@@ -838,7 +860,7 @@ def health_medicine():
                 
                 if st.button("Add Health Record", type="primary"):
                     if animal_id and description:
-                        db = get_database()
+                        db = SessionLocal()
                         try:
                             health_data = {
                                 'date': record_date,
@@ -872,6 +894,9 @@ def health_medicine():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error adding health record: {str(e)}")
+                            db.rollback()
+                        finally:
+                            db.close()
                     else:
                         st.error("Please fill all required fields (*)")
             else:
