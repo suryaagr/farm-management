@@ -14,7 +14,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.markdown("""
+# Inject custom CSS only once to avoid duplication on reruns
+if 'custom_css_loaded' not in st.session_state:
+    st.session_state.custom_css_loaded = True
+    st.markdown("""
 <style>
     /* Modern Color Palette */
     :root {
