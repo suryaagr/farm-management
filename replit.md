@@ -78,3 +78,35 @@ The codebase shows evidence of migration from session state to persistent databa
 
 ### Environment Configuration
 - **os**: Environment variable access for database URL configuration
+
+## Deployment
+
+### Deployment Configuration
+The application is configured for deployment to GitHub + Streamlit Community Cloud:
+
+- **packages.txt**: PostgreSQL system dependencies (libpq-dev)
+- **.gitignore**: Protects sensitive files and environment-specific configurations
+- **.streamlit/secrets.toml.example**: Template for database secrets configuration
+- **DEPLOYMENT.md**: Comprehensive step-by-step deployment guide
+
+### Database Configuration
+The application supports dual database configuration sources:
+
+1. **Replit/Local Development**: Uses `DATABASE_URL` environment variable
+2. **Streamlit Cloud**: Uses `st.secrets["connections"]["postgresql"]["url"]`
+
+The `database.py` module automatically detects the environment and uses the appropriate configuration source with a fallback mechanism:
+- Priority: Streamlit Cloud secrets
+- Fallback: Environment variables
+- Error handling: Clear error message if no database URL is configured
+
+### Deployment Steps Overview
+1. Create `requirements.txt` with all Python dependencies
+2. Push code to GitHub repository
+3. Sign up for Streamlit Community Cloud (free)
+4. Set up PostgreSQL database (Neon, Supabase, or other provider)
+5. Configure database URL in Streamlit Cloud secrets
+6. Deploy app from GitHub repository
+7. Initialize database tables
+
+See **DEPLOYMENT.md** for detailed instructions.
