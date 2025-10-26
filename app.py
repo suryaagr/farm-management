@@ -17,43 +17,19 @@ try:
     from database import SessionLocal
     import db_utils
     DATABASE_AVAILABLE = True
-except ValueError as e:
+    DATABASE_ERROR = ""
+except Exception as e:
+    # If imports fail (ImportError, ModuleNotFoundError, etc.) run in offline/demo mode
+    SessionLocal = None
+    db_utils = None
     DATABASE_AVAILABLE = False
     DATABASE_ERROR = str(e)
 
 # Check if database is configured
 if not DATABASE_AVAILABLE:
-    st.error("⚠️ **Database Not Configured**")
-    st.markdown(f"""
-    The application cannot connect to the database. Please configure your database connection:
-    
-    ### For Streamlit Cloud:
-    1. Click the **⋮** menu (three dots) in the top right corner
-    2. Select **Settings** → **Secrets**
-    3. Add the following configuration:
-    
-    ```toml
-    [connections.postgresql]
-    url = "your-database-connection-string"
-    ```
-    
-    ### For Local Development:
-    Set the `DATABASE_URL` environment variable to your PostgreSQL connection string.
-    
-    ---
-    
-    **Error Details:**
-    ```
-    {DATABASE_ERROR}
-    ```
-    
-    ### Need a Free PostgreSQL Database?
-    - **Neon**: https://neon.tech/ (recommended, no credit card required)
-    - **Supabase**: https://supabase.com/
-    
-    After configuring the database, the app will automatically restart.
-    """)
-    st.stop()
+    st.warning("⚠️ Database not configured — running in offline/demo mode. Some features that require DB persistence will use in-memory session state.")
+    if DATABASE_ERROR:
+        st.caption(f"DB import error: {DATABASE_ERROR}")
 
 # Inject custom CSS only once to avoid duplication on reruns
 if 'custom_css_loaded' not in st.session_state:
@@ -119,24 +95,16 @@ def load_data_from_db():
 if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
 
-if not st.session_state.data_loaded:
+# Only try to load from DB when database modules were successfully imported
+if not st.session_state.data_loaded and DATABASE_AVAILABLE:
     try:
         load_data_from_db()
         st.session_state.data_loaded = True
-    except (ValueError, TypeError) as e:
-        st.error("⚠️ **Database Connection Error**")
-        st.markdown(f"""
-        Cannot load data from the database. This usually means the database is not properly configured.
-        
-        **Error:** `{str(e)}`
-        
-        ### For Streamlit Cloud:
-        Please configure your database connection in **Settings → Secrets**.
-        
-        ### For Local Development:
-        Make sure the `DATABASE_URL` environment variable is set.
-        """)
-        st.stop()
+    except Exception as e:
+        st.error("⚠️ Database Connection Error")
+        st.markdown(f"Cannot load data from the database. Error: `{str(e)}`")
+        # keep running in demo mode (do not st.stop so UI still loads)
+        st.session_state.data_loaded = False
 
 st.sidebar.title("🐄 Gir Cow Farm")
 st.sidebar.markdown("---")
@@ -1724,6 +1692,38 @@ def financial_accounting():
                 monthly_pivot['Net'] = monthly_pivot['Income'] - monthly_pivot['Expense']
                 
                 fig = go.Figure()
+                fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Income'], name='Income', marker_color='green'))
+                fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Expense'], name='Expense', marker_color='red'))
+                fig.add_trace(go.Scatter(x=monthly_pivot['date'], y=monthly_pivot['Net'], name='Net', mode='lines+markers', line=dict(color='blue', width=3)))
+                fig.update_layout(title='Monthly Income vs Expense', xaxis_title='Month', yaxis_title='Amount (₹)', barmode='group')
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No financial data available for reports")
+    
+    with tab4:
+        st.subheader("Profit & Loss Statement")
+        
+        if not st.session_state.financial_transactions.empty:
+            col1, col2 = st.columns(2)
+            with col1:
+                pl_from = st.date_input("From", value=datetime.now().date() - timedelta(days=365), key="pl_from")
+            with col2:
+                pl_to = st.date_input("To", value=datetime.now().date(), key="pl_to")
+            
+            trans_df = st.session_state.financial_transactions.copy()
+            trans_df['date'] = pd.to_datetime(trans_df['date'])
+            
+            filtered_pl = trans_df[
+                (trans_df['date'] >= pd.to_datetime(pl_from)) &
+                (trans_df['date'] <= pd.to_datetime(pl_to))
+            ]
+            
+            if not filtered_pl.empty:
+                st.markdown("#### Income")
+                income_summary = filtered_pl[filtered_pl['type'] == 'Income'].groupby('category')['amount'].sum().reset_index()
+                income_summary.columns = ['Category', 'Amount (₹)']
+                st.dataframe(income_summary, use_container_width=True)
+                total_income = income_summary['Amount (₹)'].sum()
                 fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Income'], name='Income', marker_color='green'))
                 fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Expense'], name='Expense', marker_color='red'))
                 fig.add_trace(go.Scatter(x=monthly_pivot['date'], y=monthly_pivot['Net'], name='Net', mode='lines+markers', line=dict(color='blue', width=3)))
