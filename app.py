@@ -2298,10 +2298,16 @@ def reports():
             st.info("No financial records")
 
 def dashboard():
-    st.title("🏠 Farm Dashboard")
-    
-    st.markdown("### Gir Cow Dairy Farm Management System")
-    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; padding: 2rem 0 3rem 0;">
+        <h1 style="font-size: 3.5rem; margin: 0; background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+            🏠 Farm Dashboard
+        </h1>
+        <p style="font-size: 1.2rem; color: #94a3b8; margin-top: 1rem;">
+            Real-time insights into your dairy operations
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -2357,6 +2363,15 @@ def dashboard():
                     title='Last 30 Days Milk Production',
                     labels={'yield_litres': 'Milk (Litres)', 'date': 'Date'}
                 )
+                fig.update_traces(line_color='#10b981', line_width=3)
+                fig.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#f1f5f9'),
+                    title_font=dict(size=20, color='#10b981'),
+                    xaxis=dict(gridcolor='#334155', showgrid=True),
+                    yaxis=dict(gridcolor='#334155', showgrid=True)
+                )
                 st.plotly_chart(fig, use_container_width=True)
                 
                 col1, col2 = st.columns(2)
@@ -2368,7 +2383,16 @@ def dashboard():
                         x='animal_id',
                         y='yield_litres',
                         title='Top 5 Producers (Last 30 Days)',
-                        labels={'yield_litres': 'Milk (Litres)', 'animal_id': 'Cow ID'}
+                        labels={'yield_litres': 'Milk (Litres)', 'animal_id': 'Cow ID'},
+                        color_discrete_sequence=['#10b981']
+                    )
+                    fig.update_layout(
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#f1f5f9'),
+                        title_font=dict(size=18, color='#10b981'),
+                        xaxis=dict(gridcolor='#334155'),
+                        yaxis=dict(gridcolor='#334155')
                     )
                     st.plotly_chart(fig, use_container_width=True)
                 
@@ -2388,7 +2412,16 @@ def dashboard():
                             x='Status',
                             y='Count',
                             title='Herd Fertility Summary',
-                            labels={'Count': 'Number of Cows'}
+                            labels={'Count': 'Number of Cows'},
+                            color_discrete_sequence=['#3b82f6', '#8b5cf6']
+                        )
+                        fig.update_layout(
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='#f1f5f9'),
+                            title_font=dict(size=18, color='#10b981'),
+                            xaxis=dict(gridcolor='#334155'),
+                            yaxis=dict(gridcolor='#334155')
                         )
                         st.plotly_chart(fig, use_container_width=True)
         else:
@@ -2410,9 +2443,20 @@ def dashboard():
                 
                 if 'Income' in monthly_pivot.columns and 'Expense' in monthly_pivot.columns:
                     fig = go.Figure()
-                    fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Income'], name='Income', marker_color='green'))
-                    fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Expense'], name='Expense', marker_color='red'))
-                    fig.update_layout(title='Monthly Income vs Expense (Last 6 Months)', xaxis_title='Month', yaxis_title='Amount (₹)', barmode='group')
+                    fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Income'], name='Income', marker_color='#10b981'))
+                    fig.add_trace(go.Bar(x=monthly_pivot['date'], y=monthly_pivot['Expense'], name='Expense', marker_color='#ef4444'))
+                    fig.update_layout(
+                        title='Monthly Income vs Expense (Last 6 Months)',
+                        xaxis_title='Month',
+                        yaxis_title='Amount (₹)',
+                        barmode='group',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#f1f5f9'),
+                        title_font=dict(size=20, color='#10b981'),
+                        xaxis=dict(gridcolor='#334155'),
+                        yaxis=dict(gridcolor='#334155')
+                    )
                     st.plotly_chart(fig, use_container_width=True)
                 
                 col1, col2 = st.columns(2)
@@ -2423,7 +2467,14 @@ def dashboard():
                         expense_by_cat,
                         values='amount',
                         names='category',
-                        title='Expense Distribution by Category'
+                        title='Expense Distribution by Category',
+                        color_discrete_sequence=px.colors.sequential.Teal
+                    )
+                    fig.update_layout(
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#f1f5f9'),
+                        title_font=dict(size=18, color='#10b981')
                     )
                     st.plotly_chart(fig, use_container_width=True)
                 
@@ -2433,7 +2484,14 @@ def dashboard():
                         income_by_cat,
                         values='amount',
                         names='category',
-                        title='Income Distribution by Category'
+                        title='Income Distribution by Category',
+                        color_discrete_sequence=px.colors.sequential.Mint
+                    )
+                    fig.update_layout(
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#f1f5f9'),
+                        title_font=dict(size=18, color='#10b981')
                     )
                     st.plotly_chart(fig, use_container_width=True)
         else:
@@ -2478,7 +2536,16 @@ def dashboard():
                 color='record_type',
                 title='Health Records Trend (Last 3 Months)',
                 labels={'count': 'Number of Records', 'date': 'Month'},
-                barmode='stack'
+                barmode='stack',
+                color_discrete_sequence=['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b']
+            )
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#f1f5f9'),
+                title_font=dict(size=20, color='#10b981'),
+                xaxis=dict(gridcolor='#334155'),
+                yaxis=dict(gridcolor='#334155')
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
