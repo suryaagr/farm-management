@@ -1,0 +1,37 @@
+Functional Requirements
+4.1 Animal Management Module
+Core Features: - Animal registration with unique ID (ear tag / RFID / name) - Profile details: DOB, lineage, photos, breed, physical attributes - Lifecycle tracking: calf → heifer → adult cow - Milk production record per cow (daily/lactation-wise) - Fertility cycle management: - Heat detection and insemination dates - Pregnancy confirmation and expected calving date - Calving record (male/female calf) - Health record: - Vaccination schedule & history - Disease incidents & treatment - Veterinary visits & medicine usage - Mortality record (if applicable)
+4.2 Breeding & Genetic Tracking
+•	Record sire (bull) and dam (mother) details
+•	Maintain genetic lineage tree for breeding planning
+•	Link calves to their mothers and track milk productivity lineage
+•	AI (artificial insemination) and natural service tracking
+4.3 Milk Collection & Sales Management
+•	Daily milk yield per cow (AM/PM entries)
+•	Milk usage: sold / consumed / calf feeding / wastage
+•	Pricing (per litre, by customer or distribution channel)
+•	Invoice generation for milk sales
+•	Monthly sales summary and customer balances
+4.4 Fodder & Feed Management
+•	Record of fodder grown internally: crop type, plot, sowing-harvest cycle
+•	Stock register for green fodder and dry fodder
+•	Purchased feed record (grains, minerals, supplements)
+•	Consumption tracking by herd size and season
+•	Cost analysis: per litre milk cost based on feed & input
+4.5 Health & Medicine Management
+•	Maintain medicine inventory
+•	Record usage per animal / per treatment
+•	Track expiry dates, reorder alerts
+•	Health expense tracking (linked to accounting)
+4.6 Labour & Equipment Management
+•	Labour category: dairy / farming
+•	Attendance and daily wage record
+•	Task assignment (milking, feeding, ploughing, etc.)
+•	Equipment register (tractors, implements, vehicles)
+•	Maintenance logs, fuel consumption, repairs
+•	Equipment utilization hours vs. idle hours
+4.7 Financial Accounting Module
+Core Features: - Income categories: milk sales, manure sales, rent of equipment (if any) - Expense categories: feed, medicine, labour, maintenance, fuel, utilities - Asset register: animals, machinery, land plots, buildings - Journal entries and ledger generation - Profit & loss summary and monthly cash flow - Integration with biological data (e.g., cost per litre, cost per cow)
+4.8 Dashboard & Reports
+Dashboards: - Dairy Dashboard: Milk yield trend, top producers, herd fertility summary - Financial Dashboard: Monthly income vs. expense, category-wise cost - Health Dashboard: Sick animals, vaccine due, medicine cost analysis - Farm Dashboard: Crop cycle, equipment usage, fodder stock status
+Reports: - Cow-wise productivity & lifecycle - Calving history & expected deliveries - Feed cost vs. milk yield efficiency - Labour cost breakdown by department - Profit per litre of milk - Annual herd health summary
